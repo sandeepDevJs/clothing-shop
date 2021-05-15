@@ -16,6 +16,24 @@ var firebaseConfig = {
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 
+export const convertCollectionsSnapShotToMap = (collections) => {
+	const transformedCollection = collections.docs.map((doc) => {
+		const { title, items } = doc.data();
+
+		return {
+			routeName: encodeURI(title.toLowerCase()),
+			id: doc.id,
+			title,
+			items,
+		};
+	});
+
+	return transformedCollection.reduce((acc, collection) => {
+		acc[collection.title.toLowerCase()] = collection;
+		return acc;
+	}, {});
+};
+
 export const auth = firebase.auth();
 export const firestore = firebase.firestore();
 
@@ -41,6 +59,20 @@ export const createUserProfileDocument = async (userAuth, additionalData) => {
 	}
 
 	return userRef;
+};
+
+export const addCollectionAndDocuments = async (
+	collectionKey,
+	objectsToAdd
+) => {
+	const collectionRef = firestore.collection(collectionKey);
+	const batch = firestore.batch();
+	objectsToAdd.forEach((obj) => {
+		const newRef = collectionRef.doc();
+		batch.set(newRef, obj);
+	});
+
+	return await batch.commit();
 };
 
 const provider = new firebase.auth.GoogleAuthProvider();
